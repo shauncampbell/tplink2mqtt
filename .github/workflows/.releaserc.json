@@ -26,7 +26,7 @@
     [
       "@eclass/semantic-release-docker",
       {
-        "baseImageName": "shauncampbell/ztplink2mqtt",
+        "baseImageName": "shauncampbell/tplink2mqtt",
         "registries": [
           {
             "url": "ghcr.io",
