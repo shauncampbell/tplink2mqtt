@@ -1,0 +1,41 @@
+{
+  "branches": ["master"],
+  "plugins": [
+    [
+      "@semantic-release/commit-analyzer",
+      {
+        "preset": "conventionalcommits"
+      }
+    ],
+    [
+      "@semantic-release/release-notes-generator",
+      {
+        "preset": "conventionalcommits"
+      }
+    ],
+    [
+      "@semantic-release/github",
+      {
+        "assets": [
+          { "path":  "../../tplink2mqtt.darwin_amd64", "label":  "tplink2mqtt for MacOS X (x64)"},
+          { "path":  "../../tplink2mqtt.linux_amd64", "label":  "tplink2mqtt for Linux (x64)"},
+          { "path":  "../../tplink2mqtt.windows_amd64.exe", "label":  "tplink2mqtt for Windows (x64)"}
+        ]
+      }
+    ],
+    [
+      "@eclass/semantic-release-docker",
+      {
+        "baseImageName": "shauncampbell/ztplink2mqtt",
+        "registries": [
+          {
+            "url": "ghcr.io",
+            "imageName": "ghcr.io/shauncampbell/tplink2mqtt/tplink2mqtt",
+            "user": "GITHUB_USER",
+            "password": "GITHUB_TOKEN"
+          }
+        ]
+      }
+    ]
+  ]
+}
