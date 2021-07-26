@@ -16,9 +16,9 @@ type Config struct {
 		Username string `mapstructure:"username"`
 		Password string `mapstructure:"password"`
 	} `mapstructure:"mqtt"`
-	Subnet  string `mapstructure:"subnet"`
-	Timeout int    `mapstructure:"timeout"`
-	Interval int   `mapstructure:"interval"`
+	Subnet   string `mapstructure:"subnet"`
+	Timeout  int    `mapstructure:"timeout"`
+	Interval int    `mapstructure:"interval"`
 }
 
 // Read reads in the configuration from the environment.

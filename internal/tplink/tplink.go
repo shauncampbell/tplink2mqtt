@@ -48,11 +48,14 @@ type tplink struct {
 
 // CollectDeviceStates collects the status of the device
 func (t *tplink) CollectDeviceStates() ([]*Device, error) {
+	logger := t.logger.With().Str("subnet", t.subnet).Dur("timeout", t.timeout).Logger()
+	logger.Info().Msgf("beginning discovery")
 	devices, err := hs100.Discover(t.subnet,
 		configuration.Default().WithTimeout(t.timeout),
 	)
 
 	if err != nil {
+		logger.Err(err).Msgf("failed to collect device states")
 		return nil, err
 	}
 

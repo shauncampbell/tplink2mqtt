@@ -1,18 +1,18 @@
+// Package tplink2mqtt contains a handler for handling tplink updates and piping them to mqtt.
 package tplink2mqtt
 
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
+	"time"
+
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/shauncampbell/tplink2mqtt/internal/config"
 	"github.com/shauncampbell/tplink2mqtt/internal/tplink"
-	"strings"
-	"time"
 )
-
-const defaultTimeout = 5 * time.Second
 
 // Handler handles zigbee2mqtt messages
 type Handler struct {
@@ -58,7 +58,7 @@ func (h *Handler) publishDeviceList(client mqtt.Client) {
 	}
 
 	go func() {
-		time.Sleep(time.Duration(h.config.Interval)*time.Second)
+		time.Sleep(time.Duration(h.config.Interval) * time.Second)
 		h.publishDeviceList(client)
 	}()
 }
@@ -87,7 +87,7 @@ func (h *Handler) publishDeviceStatus(device *tplink.Device, client mqtt.Client)
 
 	h.logger.Info().Msgf("publishing device state to tplink2mqtt/%s", sanitizeFriendlyName(device.Info.FriendlyName))
 	token := client.Publish(
-		fmt.Sprintf("tplink2mqtt/%s", sanitizeFriendlyName(device.Info.FriendlyName)), 1, true, b)
+		fmt.Sprintf("tplink2mqtt/%s", sanitizeFriendlyName(device.Info.FriendlyName)), 1, false, b)
 	if token.Wait() && token.Error() != nil {
 		h.logger.Error().Msgf("failed to publish device list: %s", token.Error().Error())
 	}
