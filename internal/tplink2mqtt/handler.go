@@ -7,11 +7,13 @@ import (
 	"strings"
 	"time"
 
+	"github.com/shauncampbell/tplink2mqtt/internal/tplink"
+
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/shauncampbell/tplink2mqtt/internal/config"
-	"github.com/shauncampbell/tplink2mqtt/internal/tplink"
+	tplinkModel "github.com/shauncampbell/tplink2mqtt/pkg/tplink"
 )
 
 // Handler handles zigbee2mqtt messages
@@ -19,7 +21,7 @@ type Handler struct {
 	config  *config.Config
 	stopped bool
 	logger  zerolog.Logger
-	devices map[string]*tplink.Device
+	devices map[string]*tplinkModel.Device
 }
 
 // Connected is a handler which is called when the initial connection to the mqtt server is established.
@@ -63,7 +65,7 @@ func (h *Handler) publishDeviceList(client mqtt.Client) {
 	}()
 }
 
-func (h *Handler) publishDeviceStatus(device *tplink.Device, client mqtt.Client) {
+func (h *Handler) publishDeviceStatus(device *tplinkModel.Device, client mqtt.Client) {
 	event := make(map[string]interface{})
 	event["id"] = device.ID
 	for _, field := range device.Info.Exposes {
@@ -100,6 +102,6 @@ func sanitizeFriendlyName(friendlyName string) string {
 }
 
 // New creates a new handler.
-func New(config *config.Config) *Handler {
-	return &Handler{devices: make(map[string]*tplink.Device), logger: log.Logger, config: config}
+func New(cfg *config.Config) *Handler {
+	return &Handler{devices: make(map[string]*tplinkModel.Device), logger: log.Logger, config: cfg}
 }

@@ -9,45 +9,22 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/shauncampbell/golang-tplink-hs100/pkg/configuration"
 	"github.com/shauncampbell/golang-tplink-hs100/pkg/hs100"
+	"github.com/shauncampbell/tplink2mqtt/pkg/tplink"
 )
 
 // TPLink collects the device state information.
 type TPLink interface {
-	CollectDeviceStates() ([]*Device, error)
+	CollectDeviceStates() ([]*tplink.Device, error)
 }
 
-// DeviceInfo represents mostly static information about the device.
-type DeviceInfo struct {
-	FriendlyName   string   `json:"friendly_name"`
-	Model          string   `json:"model"`
-	NetworkAddress string   `json:"network_address"`
-	Vendor         string   `json:"vendor"`
-	Exposes        []string `json:"exposes"`
-}
-
-// DeviceState represents information about the device which changes.
-type DeviceState struct {
-	IsOn    bool    `json:"is_on"`
-	Current float32 `json:"current"`
-	Power   float32 `json:"power"`
-	Voltage float32 `json:"voltage"`
-}
-
-// Device represents the hs1xx device.
-type Device struct {
-	ID    string      `json:"id"`
-	State DeviceState `json:"state"`
-	Info  DeviceInfo  `json:"info"`
-}
-
-type tplink struct {
+type tplinkImpl struct {
 	logger  *zerolog.Logger
 	timeout time.Duration
 	subnet  string
 }
 
 // CollectDeviceStates collects the status of the device
-func (t *tplink) CollectDeviceStates() ([]*Device, error) {
+func (t *tplinkImpl) CollectDeviceStates() ([]*tplink.Device, error) {
 	logger := t.logger.With().Str("subnet", t.subnet).Dur("timeout", t.timeout).Logger()
 	logger.Info().Msgf("beginning discovery")
 	devices, err := hs100.Discover(t.subnet,
@@ -60,16 +37,16 @@ func (t *tplink) CollectDeviceStates() ([]*Device, error) {
 	}
 
 	t.logger.Info().Msgf("found %d devices", len(devices))
-	states := make([]*Device, 0)
+	states := make([]*tplink.Device, 0)
 	for _, d := range devices {
 		info, _ := d.GetInfo()
 
-		state := &Device{
+		state := &tplink.Device{
 			ID: fmt.Sprintf("0x%s", strings.ToLower(info.System.SystemInfo.DeviceID)),
-			State: DeviceState{
+			State: tplink.DeviceState{
 				IsOn: info.System.SystemInfo.RelayState == 1,
 			},
-			Info: DeviceInfo{
+			Info: tplink.DeviceInfo{
 				FriendlyName:   info.System.SystemInfo.Alias,
 				Model:          info.System.SystemInfo.Model,
 				NetworkAddress: d.Address,
@@ -95,7 +72,7 @@ func (t *tplink) CollectDeviceStates() ([]*Device, error) {
 
 // New creates a new TPLink instance.
 func New(subnet string, timeout time.Duration, logger *zerolog.Logger) TPLink {
-	return &tplink{
+	return &tplinkImpl{
 		logger:  logger,
 		timeout: timeout,
 		subnet:  subnet,
