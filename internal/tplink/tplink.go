@@ -51,7 +51,7 @@ func (t *tplinkImpl) CollectDeviceStates() ([]*tplink.Device, error) {
 				Model:          info.System.SystemInfo.Model,
 				NetworkAddress: d.Address,
 				Vendor:         "TPLink",
-				Exposes:        []string{"on"},
+				Exposes:        []tplink.DeviceAttribute{tplink.OnDeviceAttribute},
 			},
 		}
 
@@ -60,7 +60,8 @@ func (t *tplinkImpl) CollectDeviceStates() ([]*tplink.Device, error) {
 			state.State.Voltage = powerConsumption.Voltage
 			state.State.Power = powerConsumption.Power
 			state.State.Current = powerConsumption.Current
-			state.Info.Exposes = append(state.Info.Exposes, "voltage", "power", "current")
+			state.Info.Exposes = append(state.Info.Exposes,
+				tplink.VoltageDeviceAttribute, tplink.PowerDeviceAttribute, tplink.CurrentDeviceAttribute)
 		} else {
 			t.logger.Warn().Msgf("failed to collect power consumption: %s", err.Error())
 		}
