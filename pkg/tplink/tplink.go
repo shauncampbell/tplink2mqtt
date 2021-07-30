@@ -3,10 +3,10 @@ package tplink
 
 // DeviceInfo represents mostly static information about the device.
 type DeviceInfo struct {
-	FriendlyName   string   `json:"friendly_name"`
-	Model          string   `json:"model"`
-	NetworkAddress string   `json:"network_address"`
-	Vendor         string   `json:"vendor"`
+	FriendlyName   string            `json:"friendly_name"`
+	Model          string            `json:"model"`
+	NetworkAddress string            `json:"network_address"`
+	Vendor         string            `json:"vendor"`
 	Exposes        []DeviceAttribute `json:"exposes"`
 }
 
@@ -24,14 +24,14 @@ type DeviceAttribute struct {
 
 // OnDeviceAttribute is the attribute for power status.
 var OnDeviceAttribute = DeviceAttribute{
-	Access: 1,
+	Access:      1,
 	Description: "Power Status of the Switch",
-	Property: "on",
-	Name: "on",
-	Type: "binary",
-	Unit: "",
-	ValueMax: 1,
-	ValueMin: 0,
+	Property:    "on",
+	Name:        "on",
+	Type:        "binary",
+	Unit:        "",
+	ValueMax:    1,
+	ValueMin:    0,
 }
 
 // VoltageDeviceAttribute is the attribute for voltage.

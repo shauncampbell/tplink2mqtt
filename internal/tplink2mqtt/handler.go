@@ -69,15 +69,15 @@ func (h *Handler) publishDeviceStatus(device *tplinkModel.Device, client mqtt.Cl
 	event := make(map[string]interface{})
 	event["id"] = device.ID
 	for _, field := range device.Info.Exposes {
-		switch field {
+		switch field.Property {
 		case "on":
-			event[field] = device.State.IsOn
+			event[field.Property] = device.State.IsOn
 		case "voltage":
-			event[field] = device.State.Voltage
+			event[field.Property] = device.State.Voltage
 		case "current":
-			event[field] = device.State.Current
+			event[field.Property] = device.State.Current
 		case "power":
-			event[field] = device.State.Power
+			event[field.Property] = device.State.Power
 		}
 	}
 
