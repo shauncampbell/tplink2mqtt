@@ -56,7 +56,11 @@ func (h *Handler) publishDeviceList(client mqtt.Client) {
 	}
 
 	for _, device := range devices {
-		h.publishDeviceStatus(device, client)
+		if h.devices[device.ID] == nil || !h.devices[device.ID].IsEqualTo(device) {
+			h.publishDeviceStatus(device, client)
+		}
+
+		h.devices[device.ID] = device
 	}
 
 	go func() {
