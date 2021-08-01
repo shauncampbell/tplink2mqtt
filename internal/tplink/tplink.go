@@ -36,10 +36,14 @@ func (t *tplinkImpl) CollectDeviceStates() ([]*tplink.Device, error) {
 		return nil, err
 	}
 
-	t.logger.Info().Msgf("found %d devices", len(devices))
+	logger.Info().Msgf("found %d devices", len(devices))
 	states := make([]*tplink.Device, 0)
 	for _, d := range devices {
-		info, _ := d.GetInfo()
+		info, err := d.GetInfo()
+		if err != nil {
+			logger.Error().Msgf("failed to retrieve device info: %s", err.Error())
+			continue
+		}
 
 		state := &tplink.Device{
 			ID: fmt.Sprintf("0x%s", strings.ToLower(info.System.SystemInfo.DeviceID)),
