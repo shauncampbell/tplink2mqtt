@@ -3,6 +3,7 @@ package tplink2mqtt
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/shauncampbell/tplink2mqtt/internal/tplink"
 	"regexp"
 	"time"
 
@@ -60,6 +61,15 @@ func (h *Handler) handleHomeAssistantUpdate(client mqtt.Client, message mqtt.Mes
 			return
 		}
 	}
+
+	t := tplink.New(h.config.Subnet, time.Duration(h.config.Timeout)*time.Second, &logger)
+	dstate, err := t.CollectDeviceState(ipAddress)
+	if err != nil {
+		logger.Error().Msgf("failed to collect device state: %s", err.Error())
+		return
+	}
+
+	h.publishDeviceStatus(dstate, client)
 }
 
 func (h *Handler) subscribeToHomeAssistant(device *tplinkModel.Device, client mqtt.Client) {
@@ -112,7 +122,7 @@ func (h *Handler) publishDeviceToHomeAssistant(device *tplinkModel.Device, clien
 		state = "ON"
 	}
 	h.logger.Info().Msgf("publishing device state to %s", stateTopic)
-	token = client.Publish(stateTopic, 1, false, []byte(state))
+	token = client.Publish(stateTopic, 1, true, []byte(state))
 	if token.Wait() && token.Error() != nil {
 		h.logger.Error().Msgf("failed to publish device to home assistant: %s", token.Error().Error())
 	}
