@@ -101,61 +101,6 @@ func (h *Handler) publishDeviceStatus(device *tplinkModel.Device, client mqtt.Cl
 	h.publishDeviceToHomeAssistant(device, client)
 }
 
-func (h *Handler) subscribeToHomeAssistant(device *tplinkModel.Device, client mqtt.Client) {
-	if !client.IsConnected() {
-		token := client.Connect()
-		if token.Wait() && token.Error() != nil {
-			h.logger.Error().Msgf("failed to connect to mqtt: %s", token.Error().Error())
-		}
-	}
-
-	token := client.Subscribe(fmt.Sprintf("homeassistant/switch/%s/set", device.ID), 1, h.handleHomeAssistantUpdate)
-	if token.Wait() && token.Error() != nil {
-		h.logger.Error().Msgf("failed to subscribe to home assistant device state: %s", token.Error().Error())
-	}
-	h.logger.Info().Msgf("subscribed to %s", fmt.Sprintf("homeassistant/switch/%s/set", device.ID))
-}
-func (h *Handler) handleHomeAssistantUpdate(client mqtt.Client, message mqtt.Message) {
-	payload := message.Payload()
-	h.logger.Info().Msgf("received message from home assistant with %s", string(payload))
-}
-func (h *Handler) publishDeviceToHomeAssistant(device *tplinkModel.Device, client mqtt.Client) {
-	event := make(map[string]interface{})
-	event["name"] = device.Info.FriendlyName
-	event["command_topic"] = "homeassistant/switch/" + device.ID + "/set"
-	event["state_topic"] = "homeassistant/switch/" + device.ID + "/state"
-	event["device"] = map[string]interface{}{
-		"manufacturer": device.Info.Vendor,
-		"connections":  [][]string{{"ip", device.Info.NetworkAddress}},
-		"identifiers":  []string{device.ID},
-		"model":        device.Info.Model,
-		"name":         device.Info.FriendlyName,
-	}
-	event["unique_id"] = device.ID
-
-	b, err := json.Marshal(event)
-	if err != nil {
-		h.logger.Error().Msgf("failed to create json: %s", err.Error())
-		return
-	}
-
-	h.logger.Info().Msgf("publishing device config to %s", fmt.Sprintf("homeassistant/switch/%s/state", device.ID))
-	token := client.Publish(fmt.Sprintf("homeassistant/switch/%s/config", device.ID), 1, false, b)
-	if token.Wait() && token.Error() != nil {
-		h.logger.Error().Msgf("failed to publish device to home assistant: %s", token.Error().Error())
-	}
-
-	var state = "OFF"
-	if device.State.IsOn {
-		state = "ON"
-	}
-	h.logger.Info().Msgf("publishing device state to %s", fmt.Sprintf("homeassistant/switch/%s/state", device.ID))
-	token = client.Publish(fmt.Sprintf("homeassistant/switch/%s/state", device.ID), 1, false, []byte(state))
-	if token.Wait() && token.Error() != nil {
-		h.logger.Error().Msgf("failed to publish device to home assistant: %s", token.Error().Error())
-	}
-}
-
 func sanitizeFriendlyName(friendlyName string) string {
 	str := strings.ToLower(friendlyName)
 	str = strings.ReplaceAll(str, " ", "_")
