@@ -29,17 +29,17 @@ func (h *Handler) handleHomeAssistantUpdate(client mqtt.Client, message mqtt.Mes
 	}
 
 	deviceID := homeAssistantTopicRegex.FindStringSubmatch(message.Topic())
-	if len(deviceID) == 0 {
+	if len(deviceID) < 2 {
 		logger.Error().Msgf("unable to determine device id from topic")
 		return
 	}
-	logger = logger.With().Str("device_id", deviceID[0]).Logger()
+	logger = logger.With().Str("device_id", deviceID[1]).Logger()
 	payload := message.Payload()
 	logger.Info().Msgf("received request to set state of device to %s", string(payload))
 
-	device := h.devices[deviceID[0]]
+	device := h.devices[deviceID[1]]
 	if device == nil {
-		logger.Error().Msgf("unknown device: %s", deviceID[0])
+		logger.Error().Msgf("unknown device: %s", deviceID[1])
 		return
 	}
 
