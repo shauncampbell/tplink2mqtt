@@ -58,10 +58,10 @@ func (h *Handler) publishDeviceList(client mqtt.Client) {
 	for _, device := range devices {
 		if h.devices[device.ID] == nil || !h.devices[device.ID].IsEqualTo(device) {
 			h.publishDeviceStatus(device, client)
-			h.subscribeToHomeAssistant(device, client)
 		}
 
 		h.devices[device.ID] = device
+		h.subscribeToHomeAssistant(device, client)
 	}
 
 	time.Sleep(time.Duration(h.config.Interval) * time.Second)

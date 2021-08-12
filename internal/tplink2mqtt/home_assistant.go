@@ -3,9 +3,10 @@ package tplink2mqtt
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/shauncampbell/tplink2mqtt/internal/tplink"
 	"regexp"
 	"time"
+
+	"github.com/shauncampbell/tplink2mqtt/internal/tplink"
 
 	"github.com/shauncampbell/golang-tplink-hs100/pkg/configuration"
 	"github.com/shauncampbell/golang-tplink-hs100/pkg/hs100"
@@ -15,9 +16,10 @@ import (
 )
 
 const (
-	homeAssistantTopicFmt = "homeassistant/switch/%s/%s"
-	on                    = "ON"
-	off                   = "OFF"
+	homeAssistantTopicFmt          = "homeassistant/switch/%s/%s"
+	on                             = "ON"
+	off                            = "OFF"
+	homeAssistantTopicRegexMatches = 2
 )
 
 var homeAssistantTopicRegex = regexp.MustCompile(`^homeassistant/switch/(.+?)/set$`)
@@ -30,7 +32,7 @@ func (h *Handler) handleHomeAssistantUpdate(client mqtt.Client, message mqtt.Mes
 	}
 
 	deviceID := homeAssistantTopicRegex.FindStringSubmatch(message.Topic())
-	if len(deviceID) < 2 {
+	if len(deviceID) < homeAssistantTopicRegexMatches {
 		logger.Error().Msgf("unable to determine device id from topic")
 		return
 	}
@@ -112,7 +114,7 @@ func (h *Handler) publishDeviceToHomeAssistant(device *tplinkModel.Device, clien
 	stateTopic := fmt.Sprintf(homeAssistantTopicFmt, device.ID, "state")
 
 	h.logger.Info().Msgf("publishing device config to %s", configTopic)
-	token := client.Publish(configTopic, 1, false, b)
+	token := client.Publish(configTopic, 1, true, b)
 	if token.Wait() && token.Error() != nil {
 		h.logger.Error().Msgf("failed to publish device to home assistant: %s", token.Error().Error())
 	}
