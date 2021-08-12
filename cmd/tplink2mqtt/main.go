@@ -5,6 +5,10 @@ import (
 	"os"
 	"time"
 
+	"github.com/shauncampbell/tplink2mqtt/internal/destination"
+	"github.com/shauncampbell/tplink2mqtt/internal/destination/homeassistant"
+	"github.com/shauncampbell/tplink2mqtt/internal/destination/standard"
+
 	"github.com/shauncampbell/tplink2mqtt/internal/config"
 	"github.com/shauncampbell/tplink2mqtt/internal/tplink2mqtt"
 
@@ -27,7 +31,11 @@ func runApplication(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to read configuration: %w", err)
 	}
 
-	handler := tplink2mqtt.New(cfg)
+	handler := tplink2mqtt.New(cfg, []destination.Destination{
+		standard.New(standard.Options{}),
+		homeassistant.New(homeassistant.Options{}),
+	})
+
 	mqttOptions := mqtt.NewClientOptions()
 	mqttOptions.AddBroker(fmt.Sprintf("tcp://%s:%d", cfg.MQTT.Host, cfg.MQTT.Port))
 	if cfg.MQTT.Username != "" {

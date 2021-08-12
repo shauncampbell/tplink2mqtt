@@ -2,10 +2,10 @@
 package tplink2mqtt
 
 import (
-	"encoding/json"
-	"fmt"
-	"strings"
 	"time"
+
+	"github.com/shauncampbell/tplink2mqtt/internal/destination"
+	"github.com/shauncampbell/tplink2mqtt/internal/listener"
 
 	"github.com/shauncampbell/tplink2mqtt/internal/tplink"
 
@@ -18,10 +18,12 @@ import (
 
 // Handler handles zigbee2mqtt messages
 type Handler struct {
-	config  *config.Config
-	stopped bool
-	logger  zerolog.Logger
-	devices map[string]*tplinkModel.Device
+	config       *config.Config
+	stopped      bool
+	logger       zerolog.Logger
+	devices      map[string]*tplinkModel.Device
+	destinations []destination.Destination
+	listeners    []listener.Listener
 }
 
 // Connected is a handler which is called when the initial connection to the mqtt server is established.
@@ -43,25 +45,8 @@ func (h *Handler) publishDeviceList(client mqtt.Client) {
 		return
 	}
 
-	b, err := json.Marshal(&devices)
-	if err != nil {
-		h.logger.Error().Msgf("failed to create json: %s", err.Error())
-		return
-	}
-
-	h.logger.Info().Msgf("publishing device list")
-	token := client.Publish("tplink2mqtt/bridge/devices", 1, true, b)
-	if token.Wait() && token.Error() != nil {
-		h.logger.Error().Msgf("failed to publish device list: %s", token.Error().Error())
-	}
-
 	for _, device := range devices {
-		if h.devices[device.ID] == nil || !h.devices[device.ID].IsEqualTo(device) {
-			h.publishDeviceStatus(device, client)
-		}
-
-		h.devices[device.ID] = device
-		h.subscribeToHomeAssistant(device, client)
+		h.publishDeviceStatus(device, client)
 	}
 
 	time.Sleep(time.Duration(h.config.Interval) * time.Second)
@@ -71,43 +56,29 @@ func (h *Handler) publishDeviceList(client mqtt.Client) {
 }
 
 func (h *Handler) publishDeviceStatus(device *tplinkModel.Device, client mqtt.Client) {
-	event := make(map[string]interface{})
-	event["id"] = device.ID
-	for _, field := range device.Info.Exposes {
-		switch field.Property {
-		case "on":
-			event[field.Property] = device.State.IsOn
-		case "voltage":
-			event[field.Property] = device.State.Voltage
-		case "current":
-			event[field.Property] = device.State.Current
-		case "power":
-			event[field.Property] = device.State.Power
+	var err error
+	for _, dest := range h.destinations {
+		err = dest.Publish(device, client)
+		if err != nil {
+			h.logger.Error().Msgf("failed to publish to destination: %s", err.Error())
+			continue
 		}
 	}
 
-	b, err := json.Marshal(event)
-	if err != nil {
-		h.logger.Error().Msgf("failed to create json: %s", err.Error())
-		return
+	for _, list := range h.listeners {
+		err = list.Listen(device, client, h.publishDeviceStatus)
+		if err != nil {
+			h.logger.Error().Msgf("failed to subscribe to listener: %s", err.Error())
+			continue
+		}
 	}
-
-	h.logger.Info().Msgf("publishing device state to tplink2mqtt/%s", sanitizeFriendlyName(device.Info.FriendlyName))
-	token := client.Publish(
-		fmt.Sprintf("tplink2mqtt/%s", sanitizeFriendlyName(device.Info.FriendlyName)), 1, false, b)
-	if token.Wait() && token.Error() != nil {
-		h.logger.Error().Msgf("failed to publish device list: %s", token.Error().Error())
-	}
-	h.publishDeviceToHomeAssistant(device, client)
-}
-
-func sanitizeFriendlyName(friendlyName string) string {
-	str := strings.ToLower(friendlyName)
-	str = strings.ReplaceAll(str, " ", "_")
-	return str
 }
 
 // New creates a new handler.
-func New(cfg *config.Config) *Handler {
-	return &Handler{devices: make(map[string]*tplinkModel.Device), logger: log.Logger, config: cfg}
+func New(cfg *config.Config, destinations []destination.Destination) *Handler {
+	return &Handler{
+		devices:      make(map[string]*tplinkModel.Device),
+		destinations: destinations,
+		logger:       log.Logger,
+		config:       cfg}
 }
