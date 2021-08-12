@@ -6,6 +6,8 @@ import (
 	"regexp"
 	"time"
 
+	"github.com/rs/zerolog/log"
+
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/rs/zerolog"
 	"github.com/shauncampbell/golang-tplink-hs100/pkg/configuration"
@@ -113,4 +115,9 @@ func (h *HomeAssistant) handleHomeAssistantUpdate(callback listener.StateChanged
 
 		callback(dstate, client)
 	}
+}
+
+// New creates a new Home Assistant destination.
+func New(options Options) listener.Listener {
+	return &HomeAssistant{options: options, logger: log.Logger, devices: make(map[string]*tplinkModel.Device)}
 }

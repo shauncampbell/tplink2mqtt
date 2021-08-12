@@ -75,10 +75,11 @@ func (h *Handler) publishDeviceStatus(device *tplinkModel.Device, client mqtt.Cl
 }
 
 // New creates a new handler.
-func New(cfg *config.Config, destinations []destination.Destination) *Handler {
+func New(cfg *config.Config, destinations []destination.Destination, listeners []listener.Listener) *Handler {
 	return &Handler{
 		devices:      make(map[string]*tplinkModel.Device),
 		destinations: destinations,
+		listeners:    listeners,
 		logger:       log.Logger,
 		config:       cfg}
 }
