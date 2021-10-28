@@ -29,7 +29,7 @@ type Handler struct {
 // Connected is a handler which is called when the initial connection to the mqtt server is established.
 func (h *Handler) Connected(client mqtt.Client) {
 	h.stopped = false
-	h.publishDeviceList(client)
+	go h.publishDeviceList(client)
 }
 
 // Disconnected is a handler which is called when the connection to the mqtt server is severed.
@@ -38,21 +38,20 @@ func (h *Handler) Disconnected(client mqtt.Client, err error) {
 }
 
 func (h *Handler) publishDeviceList(client mqtt.Client) {
-	tpClient := tplink.New(h.config.Subnet, time.Second*time.Duration(h.config.Timeout), &log.Logger)
-	devices, err := tpClient.CollectDeviceStates()
-	if err != nil {
-		h.logger.Error().Msgf("failed to collect device states: %s", err.Error())
-		return
-	}
+	for {
+		tpClient := tplink.New(h.config.Subnet, time.Second*time.Duration(h.config.Timeout), &log.Logger)
+		devices, err := tpClient.CollectDeviceStates()
+		if err != nil {
+			h.logger.Error().Msgf("failed to collect device states: %s", err.Error())
+			return
+		}
 
-	for _, device := range devices {
-		h.publishDeviceStatus(device, client)
-	}
+		for _, device := range devices {
+			h.publishDeviceStatus(device, client)
+		}
 
-	time.Sleep(time.Duration(h.config.Interval) * time.Second)
-	go func() {
-		h.publishDeviceList(client)
-	}()
+		time.Sleep(time.Duration(h.config.Interval) * time.Second)
+	}
 }
 
 func (h *Handler) publishDeviceStatus(device *tplinkModel.Device, client mqtt.Client) {
